@@ -1,4 +1,5 @@
 from tkinter import Tk, BOTH, Canvas
+from graphics import *
 
 
 class Window:
@@ -25,3 +26,6 @@ class Window:
 
     def close(self):
         self.__running = False
+
+    def draw_line(self, line: Line, color: str = "white"):
+        line.draw(self.__canvas, color)
