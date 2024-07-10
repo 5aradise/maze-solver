@@ -2,6 +2,11 @@ from tkinter import Tk, BOTH, Canvas
 from graphics import *
 
 
+class Drawable:
+    def draw(self, canvas: Canvas, color: str) -> None:
+        pass
+
+
 class Window:
     def __init__(self, title: str, width: int = 800, height: int = 600) -> None:
         root = Tk()
@@ -27,5 +32,5 @@ class Window:
     def close(self):
         self.__running = False
 
-    def draw_line(self, line: Line, color: str = "white"):
-        line.draw(self.__canvas, color)
+    def draw_obj(self, obj: Drawable, color: str = "white"):
+        obj.draw(self.__canvas, color)
