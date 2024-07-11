@@ -14,26 +14,35 @@ class Maze:
         self.num_cols = num_cols
         self.num_rows = num_rows
         self.cell_size = cell_size
+        self.to_draws = []
         self._cells = list[list[Cell]]()
         self._create_cells()
+        self._create_entrance_and_exit()
 
     def _create_cells(self):
         curr_pos = self.pos.copy()
         for _ in range(self.num_rows):
             cell_row = list[Cell]()
             for _ in range(self.num_cols):
-                cell_row.append(Cell(curr_pos.copy(), self.cell_size))
+                cell = Cell(curr_pos.copy(), self.cell_size)
+                self.to_draws.append(cell.copy())
+                cell_row.append(cell)
                 curr_pos += Vec2(self.cell_size, 0)
             self._cells.append(cell_row)
             curr_pos.x = self.pos.x
             curr_pos.y += self.cell_size
 
+    def _create_entrance_and_exit(self):
+        self._cells[0][0].l_wall = False
+        self.to_draws.append(self._cells[0][0].copy())
+        self._cells[-1][-1].r_wall = False
+        self.to_draws.append(self._cells[-1][-1].copy())
+
     def draw(self, win: Window):
-        for cell_row in self._cells:
-            for cell in cell_row:
-                cell.draw(win)
-                win.redraw()
-                time.sleep(0.02)
+        for to_draw in self.to_draws:
+            to_draw.draw(win)
+            win.redraw()
+            time.sleep(0.02)
 
 
 class Cell:
@@ -56,18 +65,33 @@ class Cell:
             Line(pos, pos+Vec2(0, size), theme.CELL_COLOR),
         ]
 
+    def copy(self) -> 'Cell':
+        return Cell(self._pos, self._size, self.l_wall, self.r_wall, self.t_wall, self.b_wall)
+
     def draw(self, win: Window) -> None:
         if self.t_wall:
-            self.__body[0].draw(win)
+            self.__body[0].color = theme.CELL_COLOR
+        else:
+            self.__body[0].color = theme.BACKGROUND_COLOR
+        self.__body[0].draw(win)
 
         if self.r_wall:
-            self.__body[1].draw(win)
+            self.__body[1].color = theme.CELL_COLOR
+        else:
+            self.__body[1].color = theme.BACKGROUND_COLOR
+        self.__body[1].draw(win)
 
         if self.b_wall:
-            self.__body[2].draw(win)
+            self.__body[2].color = theme.CELL_COLOR
+        else:
+            self.__body[2].color = theme.BACKGROUND_COLOR
+        self.__body[2].draw(win)
 
         if self.l_wall:
-            self.__body[3].draw(win)
+            self.__body[3].color = theme.CELL_COLOR
+        else:
+            self.__body[3].color = theme.BACKGROUND_COLOR
+        self.__body[3].draw(win)
 
     def move(self, to_cell: 'Cell', undo=False) -> tuple[Line, str]:
         start = self._pos + Vec2(self._size/2, self._size/2)
