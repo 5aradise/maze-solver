@@ -1,4 +1,5 @@
 from tkinter import Canvas
+from window import Drawable
 
 
 class Vec2:
@@ -16,11 +17,12 @@ class Vec2:
         return f"Vec2({self.x}, {self.y})"
 
 
-class Line:
-    def __init__(self, p1: Vec2, p2: Vec2) -> None:
+class Line(Drawable):
+    def __init__(self, p1: Vec2, p2: Vec2, color: str) -> None:
         self.p1 = p1
         self.p2 = p2
+        self.color = color
 
-    def draw(self, canvas: Canvas, color: str):
+    def draw(self, canvas: Canvas):
         canvas.create_line(self.p1.x, self.p1.y,
-                           self.p2.x, self.p2.y, fill=color, width=2)
+                           self.p2.x, self.p2.y, fill=self.color, width=2)

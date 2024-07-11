@@ -1,18 +1,18 @@
 from tkinter import Tk, BOTH, Canvas
-from graphics import *
+import theme
 
 
 class Drawable:
-    def draw(self, canvas: Canvas, color: str) -> None:
+    def draw(self, canvas: Canvas) -> None:
         pass
 
 
 class Window:
-    def __init__(self, title: str, width: int = 800, height: int = 600) -> None:
+    def __init__(self, width: int = 800, height: int = 600) -> None:
         root = Tk()
         root.title("Maze solver")
         root.protocol("WM_DELETE_WINDOW", self.close)
-        canvas = Canvas(root, bg="black",
+        canvas = Canvas(root, bg=theme.BACKGROUND_COLOR,
                         width=width, height=height)
         canvas.pack(fill=BOTH, expand=1)
 
@@ -32,5 +32,5 @@ class Window:
     def close(self):
         self.__running = False
 
-    def draw_obj(self, obj: Drawable, color: str = "white"):
-        obj.draw(self.__canvas, color)
+    def draw_obj(self, obj: Drawable):
+        obj.draw(self.__canvas)
