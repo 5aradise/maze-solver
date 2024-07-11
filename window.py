@@ -2,11 +2,6 @@ from tkinter import Tk, BOTH, Canvas
 import theme
 
 
-class Drawable:
-    def draw(self, canvas: Canvas) -> None:
-        pass
-
-
 class Window:
     def __init__(self, width: int = 800, height: int = 600) -> None:
         root = Tk()
@@ -20,6 +15,10 @@ class Window:
         self.__canvas = canvas
         self.__running = False
 
+    @property
+    def canvas(self):
+        return self.__canvas
+
     def redraw(self):
         self.__root.update()
         self.__root.update_idletasks()
@@ -31,6 +30,3 @@ class Window:
 
     def close(self):
         self.__running = False
-
-    def draw_obj(self, obj: Drawable):
-        obj.draw(self.__canvas)
