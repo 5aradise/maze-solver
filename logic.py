@@ -21,8 +21,14 @@ class Maze:
         self.num_cols = num_cols
         self.num_rows = num_rows
         self.cell_size = cell_size
-        self.__to_draws = list[Drawable]()
+        self.solve_delay = 0.03
+
         self._cells = list[list[Cell]]()
+        self.entrance = (0, 0)
+        self.exit = (self.num_rows-1, self.num_cols-1)
+
+        self.__to_draws = list[Drawable]()
+
         random.seed(seed)
         self._create_cells()
         self._create_entrance_and_exit()
@@ -42,66 +48,77 @@ class Maze:
             curr_pos.y += self.cell_size
 
     def _create_entrance_and_exit(self):
-        self._cells[0][0].l_wall = False
-        self.__to_draws.append(self._cells[0][0].copy())
-        self._cells[-1][-1].r_wall = False
-        self.__to_draws.append(self._cells[-1][-1].copy())
+        entrance = self._cells[self.entrance[0]][self.entrance[1]]
+        entrance.l_wall = False
+        self.__to_draws.append(entrance.copy())
+        exit = self._cells[self.exit[0]][self.exit[1]]
+        exit.r_wall = False
+        self.__to_draws.append(exit.copy())
 
     def _create_maze(self):
-        self._cells[0][0].visited = True
-        self._create_maze_r(0, 0)
+        entrance = self._cells[self.entrance[0]][self.entrance[1]]
+        entrance.visited = True
+        self._create_maze_r(entrance, self.entrance[0], self.entrance[1])
         self._reset_visiting()
 
-    def _create_maze_r(self, start_i: int, start_j: int):
-        start_cell = self._cells[start_i][start_j]
+    def _create_maze_r(self, start_cell: 'Cell', start_i: int, start_j: int):
+        to_visit = [None for i in range(4)]
+        if 0 <= start_j-1 and not self._cells[start_i][start_j-1].visited:
+            to_visit[0] = (self._cells[start_i][start_j-1])
+
+        if 0 <= start_i-1 and not self._cells[start_i-1][start_j].visited:
+            to_visit[1] = (self._cells[start_i-1][start_j])
+
+        if start_j+1 < self.num_cols and not self._cells[start_i][start_j+1].visited:
+            to_visit[2] = (self._cells[start_i][start_j+1])
+
+        if start_i+1 < self.num_rows and not self._cells[start_i+1][start_j].visited:
+            to_visit[3] = (self._cells[start_i+1][start_j])
+
         visited_neigh = 0
         while visited_neigh != 4:
             visited_neigh = 0
 
-            if (0 <= start_j-1
-                    and not self._cells[start_i][start_j-1].visited):
+            if to_visit[0] and not to_visit[0].visited:
                 if random.randint(0, 2) == 0:
                     visited_neigh += 1
-                    l_cell = self._cells[start_i][start_j-1]
+                    l_cell = to_visit[0]
                     l_cell.visited = True
                     start_cell.l_wall = False
                     l_cell.r_wall = False
                     self.__to_draws.append(start_cell)
                     self.__to_draws.append(l_cell)
-                    self._create_maze_r(start_i, start_j-1)
+                    self._create_maze_r(l_cell, start_i, start_j-1)
             else:
                 visited_neigh += 1
 
-            if (0 <= start_i-1
-                    and not self._cells[start_i-1][start_j].visited):
+            if to_visit[1] and not to_visit[1].visited:
                 if random.randint(0, 2) == 0:
                     visited_neigh += 1
-                    t_cell = self._cells[start_i-1][start_j]
+                    t_cell = to_visit[1]
                     t_cell.visited = True
                     start_cell.t_wall = False
                     t_cell.b_wall = False
                     self.__to_draws.append(start_cell)
                     self.__to_draws.append(t_cell)
-                    self._create_maze_r(start_i-1, start_j)
+                    self._create_maze_r(t_cell, start_i-1, start_j)
             else:
                 visited_neigh += 1
 
-            if (start_j+1 <= self.num_cols-1
-                    and not self._cells[start_i][start_j+1].visited):
+            if to_visit[2] and not to_visit[2].visited:
                 if random.randint(0, 2) == 0:
                     visited_neigh += 1
-                    r_cell = self._cells[start_i][start_j+1]
+                    r_cell = to_visit[2]
                     r_cell.visited = True
                     start_cell.r_wall = False
                     r_cell.l_wall = False
                     self.__to_draws.append(start_cell)
                     self.__to_draws.append(r_cell)
-                    self._create_maze_r(start_i, start_j+1)
+                    self._create_maze_r(r_cell, start_i, start_j+1)
             else:
                 visited_neigh += 1
 
-            if (start_i+1 <= self.num_rows-1
-                    and not self._cells[start_i+1][start_j].visited):
+            if to_visit[3] and not to_visit[3].visited:
                 if random.randint(0, 2) == 0:
                     visited_neigh += 1
                     b_cell = self._cells[start_i+1][start_j]
@@ -110,7 +127,7 @@ class Maze:
                     b_cell.t_wall = False
                     self.__to_draws.append(start_cell)
                     self.__to_draws.append(b_cell)
-                    self._create_maze_r(start_i+1, start_j)
+                    self._create_maze_r(b_cell, start_i+1, start_j)
             else:
                 visited_neigh += 1
 
@@ -119,11 +136,75 @@ class Maze:
             for cell in row:
                 cell.visited = False
 
+    def solve(self, win: Window) -> bool:
+        entrance = self._cells[self.entrance[0]][self.entrance[1]]
+        entrance.l_wall = True
+        is_solveable = self._solve_r(
+            entrance, self.entrance[0], self.entrance[1], win)
+        entrance.l_wall = False
+        self._reset_visiting()
+        return is_solveable
+
+    def _solve_r(self, curr_cell: 'Cell', curr_i: int, curr_j: int, win: Window) -> bool:
+        if curr_i == self.exit[0] and curr_j == self.exit[1]:
+            return True
+        curr_cell.visited = True
+
+        if not curr_cell.r_wall:
+            r_cell = self._cells[curr_i][curr_j+1]
+            if not r_cell.visited:
+                curr_cell.move(r_cell).draw(win)
+                win.redraw()
+                time.sleep(self.solve_delay)
+                is_exit = self._solve_r(r_cell, curr_i, curr_j+1, win)
+                if is_exit:
+                    return True
+                else:
+                    curr_cell.move(r_cell, True).draw(win)
+
+        if not curr_cell.b_wall:
+            b_cell = self._cells[curr_i+1][curr_j]
+            if not b_cell.visited:
+                curr_cell.move(b_cell).draw(win)
+                win.redraw()
+                time.sleep(self.solve_delay)
+                is_exit = self._solve_r(b_cell, curr_i+1, curr_j, win)
+                if is_exit:
+                    return True
+                else:
+                    curr_cell.move(b_cell, True).draw(win)
+
+        if not curr_cell.l_wall:
+            l_cell = self._cells[curr_i][curr_j-1]
+            if not l_cell.visited:
+                curr_cell.move(l_cell).draw(win)
+                win.redraw()
+                time.sleep(self.solve_delay)
+                is_exit = self._solve_r(l_cell, curr_i, curr_j-1, win)
+                if is_exit:
+                    return True
+                else:
+                    curr_cell.move(l_cell, True).draw(win)
+
+        if not curr_cell.t_wall:
+            t_cell = self._cells[curr_i-1][curr_j]
+            if not t_cell.visited:
+                curr_cell.move(t_cell).draw(win)
+                win.redraw()
+                time.sleep(self.solve_delay)
+                is_exit = self._solve_r(t_cell, curr_i-1, curr_j, win)
+                if is_exit:
+                    return True
+                else:
+                    curr_cell.move(t_cell, True).draw(win)
+
+        return False
+
     def draw(self, win: Window):
         for to_draw in self.__to_draws:
             to_draw.draw(win)
             win.redraw()
-            time.sleep(0.015)
+            time.sleep(0.005)
 
 
 class Cell:
@@ -176,7 +257,7 @@ class Cell:
             self.__body[3].color = theme.BACKGROUND_COLOR
         self.__body[3].draw(win)
 
-    def move(self, to_cell: 'Cell', undo=False) -> tuple[Line, str]:
+    def move(self, to_cell: 'Cell', undo=False) -> Line:
         start = self._pos + Vec2(self._size/2, self._size/2)
         end = to_cell._pos + Vec2(to_cell._size/2, to_cell._size/2)
         move = Line(
